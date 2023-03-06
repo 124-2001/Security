@@ -18,8 +18,18 @@ public class APIController {
     public List<Product> getProducts() {
         List<Product> result = new ArrayList<>();
         result.add(new Product("Coffe Machine", 150));
-        result.add(new Product("Apple Watch", 250));
+         result.add(new Product("Apple Watch", 250));
         result.add(new Product("Eink Book Reader", 350));
         return result;
+    }
+
+    @GetMapping("/get-1")
+    public String getOne(){
+        return "Get lan thu nhat ";
+    }
+
+    @GetMapping("/get-2")
+    public String getTwo(){
+        return "Get lan thu 2";
     }
 }
