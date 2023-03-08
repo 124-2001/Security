@@ -8,18 +8,78 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.User.UserBuilder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.crypto.password.Pbkdf2PasswordEncoder;
+import org.springframework.security.crypto.scrypt.SCryptPasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
+
+    @Autowired
+    private CustomAuthenProvider authenticationProvider;
+
+    //cho phép SpringSecurity sử dụng cơ chế xác thực ta cấu hình trong CustomAuthenProvider
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.authenticationProvider(authenticationProvider);
+    }
+
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        http.formLogin();
+        http.authorizeRequests()
+                .antMatchers("/api/products").hasAnyRole(Role.USER, Role.OPERATOR,Role.ADMIN)
+                .antMatchers("/api/backoffice").hasAnyRole(Role.OPERATOR, Role.ADMIN)
+                .antMatchers("/api/secret").hasRole(Role.ADMIN)
+                .antMatchers("/**").permitAll();
+    }
+
+    public static PasswordEncoder delegatePasswordEncoder(String encodingType) {
+        Map<String, PasswordEncoder> encoders = new HashMap<>();
+        encoders.put("bcrypt", new BCryptPasswordEncoder());
+        encoders.put("pbkdf2", new Pbkdf2PasswordEncoder());
+        encoders.put("scrypt", new SCryptPasswordEncoder());
+
+        return new DelegatingPasswordEncoder(encodingType, encoders);
+    }
+
+    @Bean
+    public PasswordEncoder encoder() {
+        return SecurityConfig.delegatePasswordEncoder("bcrypt");
+    }
+
+    @Bean
+    public InMemoryUserDetailsManager inMemoryUserDetailsManager() {
+        Collection<UserDetails> users = new ArrayList<>();
+        UserBuilder userBuilder = User.builder().passwordEncoder(encoder()::encode);
+        var tho1 = userBuilder.username("tho1").password("123").roles(Role.USER).build();
+        var tho2 = userBuilder.username("tho2").password("123").roles(Role.USER).build();
+        var tho3 = userBuilder.username("tho3").password("123").roles(Role.USER).build();
+
+        var operator = userBuilder.username("ope").password("123").roles(Role.OPERATOR).build();
+        var boss = userBuilder.username("boss").password("123").roles(Role.ADMIN, Role.USER).build();
+
+        //tạo ra các user add vào users và dùng UserBuilder để mã hoá các mật khẩu
+        users.add(tho1);
+        users.add(tho2);
+        users.add(tho3);
+        users.add(operator);
+        users.add(boss);
+
+        return new InMemoryUserDetailsManager(users);
+    }
 
     //Đánh dấu 1 bean , là phương thức cấu hình trả về 1 UserDetailService
     // UserDetailService là 1 interface sử dụng để xác nhận thông tin đăng nhập người dùng
@@ -46,35 +106,35 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     //để cấu hình loại xác thực  người dùng (ở đây là dùng InMemoryUserDetailsManager)
     //sử dụng 1 InMemoryUserDetailsManager đẻ quản lý danh sách người dùng
     //và không mã hóa mật khẩu
-    @Override
-    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.userDetailsService(inMemoryUserDetailsManager()).passwordEncoder(NoOpPasswordEncoder.getInstance());
-    }
-    // cấu hình bảo mật cho ứng dụng
-    @Override
-    protected void configure(HttpSecurity http) throws Exception {
-//        //chuyển hướng cho người dùng muốn truy cập vào hệ thống vào trang đăng nhập (ở đây là formLogin)
-        http.formLogin();
-//        //chỉ ra rằng phải xác thực với mọi yêu cầu để được enable
-//        http.authorizeRequests().anyRequest().authenticated();
-        http.authorizeRequests()
-                .antMatchers("/api/user").hasAnyRole("USER","OPERATOR")
-                .antMatchers("/api/operator").hasRole("OPERATOR")
-                .anyRequest().hasRole("ADMIN");
-    }
-    //là 1 bean trong spring tạo ra 1 InMemoryUserDetailsManager để quản lý danh sách người dùng được lưu trong bộ nhớ
-    @Bean
-    public InMemoryUserDetailsManager inMemoryUserDetailsManager(){
-        Collection<UserDetails> userDetails = new ArrayList<>();
-
-        var t1 = User.withUsername("t1").password("1").roles("USER").build();
-        var t2 = User.withUsername("t2").password("1").roles("ADMIN").build();
-        var t3 = User.withUsername("t3").password("1").roles("OPERATOR").build();
-        //tạo ra 1 đối tượng và đưa vào danh sách userDetails để lưu trữ
-        userDetails.add(t1);
-        userDetails.add(t2);
-        userDetails.add(t3);
-        //tạo 1 InMemoryUserDetailsManager với danh sách userDetails
-        return new InMemoryUserDetailsManager(userDetails);
-    }
+//    @Override
+//    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+//        auth.userDetailsService(inMemoryUserDetailsManager()).passwordEncoder(NoOpPasswordEncoder.getInstance());
+//    }
+//    // cấu hình bảo mật cho ứng dụng
+//    @Override
+//    protected void configure(HttpSecurity http) throws Exception {
+////        //chuyển hướng cho người dùng muốn truy cập vào hệ thống vào trang đăng nhập (ở đây là formLogin)
+//        http.formLogin();
+////        //chỉ ra rằng phải xác thực với mọi yêu cầu để được enable
+////        http.authorizeRequests().anyRequest().authenticated();
+//        http.authorizeRequests()
+//                .antMatchers("/api/user").hasAnyRole("USER","OPERATOR")
+//                .antMatchers("/api/operator").hasRole("OPERATOR")
+//                .anyRequest().hasRole("ADMIN");
+//    }
+//    //là 1 bean trong spring tạo ra 1 InMemoryUserDetailsManager để quản lý danh sách người dùng được lưu trong bộ nhớ
+//    @Bean
+//    public InMemoryUserDetailsManager inMemoryUserDetailsManager(){
+//        Collection<UserDetails> userDetails = new ArrayList<>();
+//
+//        var t1 = User.withUsername("t1").password("1").roles("USER").build();
+//        var t2 = User.withUsername("t2").password("1").roles("ADMIN").build();
+//        var t3 = User.withUsername("t3").password("1").roles("OPERATOR").build();
+//        //tạo ra 1 đối tượng và đưa vào danh sách userDetails để lưu trữ
+//        userDetails.add(t1);
+//        userDetails.add(t2);
+//        userDetails.add(t3);
+//        //tạo 1 InMemoryUserDetailsManager với danh sách userDetails
+//        return new InMemoryUserDetailsManager(userDetails);
+//    }
 }
