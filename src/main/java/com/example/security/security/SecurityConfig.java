@@ -1,5 +1,6 @@
 package com.example.security.security;
 
+import com.example.security.repository.UserDAO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,12 +25,16 @@ import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
-public class SecurityConfig extends WebSecurityConfigurerAdapter {
+public class
+SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
     private CustomAuthenProvider authenticationProvider;
 
+
     //cho phép SpringSecurity sử dụng cơ chế xác thực ta cấu hình trong CustomAuthenProvider
+    //AuthenticationManagerBuilder dùng để cấu hình thông tin đăng nhập,  có cung cấp 1 api
+    //để thêm các Authetication Provider để xác thực
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth.authenticationProvider(authenticationProvider);
@@ -40,10 +45,12 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         http.formLogin();
         http.authorizeRequests()
-                .antMatchers("/api/products").hasAnyRole(Role.USER, Role.OPERATOR,Role.ADMIN)
-                .antMatchers("/api/backoffice").hasAnyRole(Role.OPERATOR, Role.ADMIN)
-                .antMatchers("/api/secret").hasRole(Role.ADMIN)
-                .antMatchers("/**").permitAll();
+                .antMatchers("/book/read").hasRole(Authority.READ)
+                .antMatchers("/book/create").hasRole(Authority.CREATE)
+                .antMatchers("/book/delete").hasRole(Authority.DELETE)
+                .antMatchers("/book/edit").hasRole(Authority.EDIT)
+                .antMatchers("/book/search").hasRole(Authority.SEARCH)
+        .anyRequest().authenticated();
     }
 
     public static PasswordEncoder delegatePasswordEncoder(String encodingType) {
@@ -60,26 +67,17 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         return SecurityConfig.delegatePasswordEncoder("bcrypt");
     }
 
-    @Bean
-    public InMemoryUserDetailsManager inMemoryUserDetailsManager() {
-        Collection<UserDetails> users = new ArrayList<>();
-        UserBuilder userBuilder = User.builder().passwordEncoder(encoder()::encode);
-        var tho1 = userBuilder.username("tho1").password("123").roles(Role.USER).build();
-        var tho2 = userBuilder.username("tho2").password("123").roles(Role.USER).build();
-        var tho3 = userBuilder.username("tho3").password("123").roles(Role.USER).build();
-
-        var operator = userBuilder.username("ope").password("123").roles(Role.OPERATOR).build();
-        var boss = userBuilder.username("boss").password("123").roles(Role.ADMIN, Role.USER).build();
-
-        //tạo ra các user add vào users và dùng UserBuilder để mã hoá các mật khẩu
-        users.add(tho1);
-        users.add(tho2);
-        users.add(tho3);
-        users.add(operator);
-        users.add(boss);
-
-        return new InMemoryUserDetailsManager(users);
-    }
+//    @Bean
+//    public InMemoryUserDetailsManager inMemoryUserDetailsManager() {
+//        Collection<User> users = new ArrayList<>();
+//        UserBuilder userBuilder = User.builder().passwordEncoder(encoder()::encode);
+//
+//
+//        //tạo ra các user add vào users và dùng UserBuilder để mã hoá các mật khẩu
+//
+//
+//        return new InMemoryUserDetailsManager();
+//    }
 
     //Đánh dấu 1 bean , là phương thức cấu hình trả về 1 UserDetailService
     // UserDetailService là 1 interface sử dụng để xác nhận thông tin đăng nhập người dùng

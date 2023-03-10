@@ -1,4 +1,4 @@
-package com.example.security.security;
+package com.example.security.security.old;
 
 public class Role {
     public static final String ADMIN = "ADMIN";
