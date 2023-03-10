@@ -21,6 +21,11 @@ public class BookDAO extends  DAO<Book>{
     }
 
     @Override
+    public Book getRecordByName(String name) {
+        return null;
+    }
+
+    @Override
     public void addRecord(Book record) {
 
     }

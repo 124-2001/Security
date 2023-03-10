@@ -1,0 +1,3 @@
+username,password,authorities
+john,123456,"READ,WRITE"
+jane,abcdef,"READ,SEARCH"
