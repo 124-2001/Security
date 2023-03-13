@@ -67,7 +67,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         return SecurityConfig.delegatePasswordEncoder("bcrypt");
     }
 
-    
+
     @Bean
     public InMemoryUserDetailsManager inMemoryUserDetailsManager() {
         Collection<UserDetails> users = new ArrayList<>();
