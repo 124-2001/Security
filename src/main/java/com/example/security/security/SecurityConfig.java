@@ -1,6 +1,9 @@
 package com.example.security.security;
 
-import com.example.security.repository.UserDAO;
+import com.example.security.model.Authority;
+import com.example.security.model.User;
+import com.example.security.repository.UserRepository;
+import com.example.security.service.UserDetailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,17 +17,21 @@ import org.springframework.security.crypto.password.DelegatingPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.crypto.password.Pbkdf2PasswordEncoder;
 import org.springframework.security.crypto.scrypt.SCryptPasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
 @EnableWebSecurity
-public class
-SecurityConfig extends WebSecurityConfigurerAdapter {
+public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
     private CustomAuthenProvider authenticationProvider;
+    @Autowired
+    UserRepository userRepository;
 
 
     //cho phép SpringSecurity sử dụng cơ chế xác thực ta cấu hình trong CustomAuthenProvider
@@ -40,11 +47,11 @@ SecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         http.formLogin();
         http.authorizeRequests()
-                .antMatchers("/book/read").hasRole(Authority.READ)
-                .antMatchers("/book/create").hasRole(Authority.CREATE)
-                .antMatchers("/book/delete").hasRole(Authority.DELETE)
-                .antMatchers("/book/edit").hasRole(Authority.EDIT)
-                .antMatchers("/book/search").hasRole(Authority.SEARCH)
+                .antMatchers("/book/read").hasRole(Authority.READ.toString())
+                .antMatchers("/book/create").hasRole(Authority.CREATE.toString())
+                .antMatchers("/book/delete").hasRole(Authority.DELETE.toString())
+                .antMatchers("/book/edit").hasRole(Authority.EDIT.toString())
+                .antMatchers("/book/search").hasRole(Authority.SEARCH.toString())
         .anyRequest().authenticated();
     }
 
@@ -61,24 +68,13 @@ SecurityConfig extends WebSecurityConfigurerAdapter {
     public PasswordEncoder encoder() {
         return SecurityConfig.delegatePasswordEncoder("bcrypt");
     }
-
-//    @Bean
-//    public InMemoryUserDetailsManager inMemoryUserDetailsManager() {
-//        Collection<User> users = new ArrayList<>();
-//        UserBuilder userBuilder = User.builder().passwordEncoder(encoder()::encode);
+    
 //
+//    Đánh dấu 1 bean , là phương thức cấu hình trả về 1 UserDetailService
+//     UserDetailService là 1 interface sử dụng để xác nhận thông tin đăng nhập người dùng
+//     Cung cấp 1 phương thức duy nhất là loadUserByUserName để tìm kism thông tin đăng nhập của người dùng qua cơ sở dữ lệu hoặc danh sách được tạo trong bộ nhớ
 //
-//        //tạo ra các user add vào users và dùng UserBuilder để mã hoá các mật khẩu
-//
-//
-//        return new InMemoryUserDetailsManager();
-//    }
-
-    //Đánh dấu 1 bean , là phương thức cấu hình trả về 1 UserDetailService
-    // UserDetailService là 1 interface sử dụng để xác nhận thông tin đăng nhập người dùng
-    // Cung cấp 1 phương thức duy nhất là loadUserByUserName để tìm kism thông tin đăng nhập của người dùng qua cơ sở dữ lệu hoặc danh sách được tạo trong bộ nhớ
-
-    //    @Bean
+//        @Bean
 //    public UserDetailsService userDetailsService() {
 //        //tạo 1 đối tượng user sử dụng phương thức withUserName của lớp User với tên đăng nhập và mật khẩu , roles() là sử dụng để thêm vai trò của người dùng
 //        //phương thức build là để xây dựng đối tượng từ các thông tin trên
@@ -95,10 +91,10 @@ SecurityConfig extends WebSecurityConfigurerAdapter {
 //    public PasswordEncoder passwordEncoder() {
 //        return NoOpPasswordEncoder.getInstance();
 //    }
-
-    //để cấu hình loại xác thực  người dùng (ở đây là dùng InMemoryUserDetailsManager)
-    //sử dụng 1 InMemoryUserDetailsManager đẻ quản lý danh sách người dùng
-    //và không mã hóa mật khẩu
+//
+//    để cấu hình loại xác thực  người dùng (ở đây là dùng InMemoryUserDetailsManager)
+//    sử dụng 1 InMemoryUserDetailsManager đẻ quản lý danh sách người dùng
+//    và không mã hóa mật khẩu
 //    @Override
 //    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
 //        auth.userDetailsService(inMemoryUserDetailsManager()).passwordEncoder(NoOpPasswordEncoder.getInstance());

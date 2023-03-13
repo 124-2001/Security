@@ -1,7 +1,7 @@
 package com.example.security.security;
 
 import com.example.security.model.User;
-import com.example.security.repository.UserDAO;
+import com.example.security.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -9,10 +9,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -25,25 +21,19 @@ import java.util.List;
 public class CustomAuthenProvider implements AuthenticationProvider {
 //    @Autowired
 //    InMemoryUserDetailsManager inMemoryUserDetailsManager;
+    @Autowired
+     UserRepository userRepository;
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         String userName = authentication.getName();
-        String password = String.valueOf(authentication.getCredentials());
-        UserDAO userDAO = new UserDAO();
-        User user = userDAO.getRecordByName(userName);
+        User user = userRepository.findByUsername(userName);
         if(user!=null){
-            if(user.getPassword()==password){
-                //return new UsernamePasswordAuthenticationToken(authentication.getPrincipal(),authentication.getCredentials(),userDetails.getAuthorities());
-                List<GrantedAuthority> authorities = new ArrayList<>();
-                for (GrantedAuthority authority : user.getAuthorities()) {
-                    authorities.add(new SimpleGrantedAuthority(authority.getAuthority()));
-                }
-                return new UsernamePasswordAuthenticationToken(authentication.getPrincipal(),authentication.getCredentials(),authorities);
+            List<GrantedAuthority> authorities = new ArrayList<>();
+            for (GrantedAuthority authority : user.getAuthorities()) {
+                authorities.add(new SimpleGrantedAuthority(authority.getAuthority()));
             }
-            else {
-                return null;
-            }
+            return new UsernamePasswordAuthenticationToken(authentication.getPrincipal(),authentication.getCredentials(),authorities);
         }
         return null;
     }
