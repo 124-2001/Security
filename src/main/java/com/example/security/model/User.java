@@ -21,9 +21,19 @@ public class User implements UserDetails {
     private long id;
     private String username;
     private String password;
+
+    public User(String username, String password) {
+        this.username = username;
+        this.password = password;
+    }
+
     @ManyToMany
     @JoinTable(name = "users_role", joinColumns = @JoinColumn(name = "user_id"),inverseJoinColumns = @JoinColumn(name = "role_id"))
     private List<Role> roles;
+
+    public User() {
+
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

@@ -1,11 +1,13 @@
 package com.example.security;
 
+import com.example.security.model.User;
 import com.example.security.repository.RoleRepository;
 import com.example.security.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 @SpringBootApplication
 public class SecurityApplication implements CommandLineRunner {
@@ -35,8 +37,8 @@ public class SecurityApplication implements CommandLineRunner {
 //        roleRepository.saveAll(Arrays.asList(role,role1,role3,role2,role4));
 //
 //        User user = new User();
-//        user.setUsername("n");
-//        user.setPassword("1234");
+//        user.setUsername("t1");
+//        user.setPassword(bCryptPasswordEncoder().encode("1234"));
 //        userRepository.save(user);
     }
 }
